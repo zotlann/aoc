@@ -1,35 +1,48 @@
-(define file->list
-  (lambda (filename)
-    (define helper
-      (lambda (file-port)
-	(let ((x (read file-port)))
-	  (if (eof-object? x)
-	      '()
-	      (cons x (helper file-port))))))
-  (helper (open-input-file filename))))
+;Day01 of 2019 Advent of Code
 
-(define day01-calc
-  (lambda (n)
-    (define helper
-      (lambda (n acc)
-        (let ((fuel-req (- (floor (/ n 3)) 2)))
-          (if (<= fuel-req 0)
-	      acc
-	      (helper fuel-req (+ acc fuel-req))))))
-    (helper n 0)))
+;finds the fuel cost of a module of a given mass
+;the calculation for part 1 is given ass floor(mass/3)-2
+(define fuel-cost-part1
+  (lambda (mass)
+    (- (floor (/ mass 3)) 2)))
 
+;finds the fuel cost of a module given a mass
+;the calculation for part 2 is done by recursively applying part 1's mass
+;calculation and summing the results, until the resulting cost is negatve
+(define fuel-cost-part2
+  (lambda (mass)
+    (let ((cost (fuel-cost-part1 mass)))
+     (if (<= cost 0)
+         0
+         (+ cost (fuel-cost-part2 cost))))))
 
+;sums up all of the numbers in a list
 (define sum
   (lambda (lst)
     (if (null? lst)
-	0
-	(+ (car lst) (sum (cdr lst))))))
+        0
+        (+ (car lst) (sum (cdr lst))))))
 
-
-
-(define day01
+;reads the input file in and returns a list of numbers
+(define read-input
   (lambda (filename)
-    (define n-list (file->list filename))
-    (sum (map day01-calc n-list))))
+    (define helper
+      (lambda (fileport)
+        (let ((x (read fileport)))
+         (if (eof-object? x)
+             '()
+             (cons x (helper fileport))))))
+    (helper (open-input-file filename))))
 
-(day01 "input.txt")
+
+(define day01-part1
+  (lambda (filename)
+    (let ((masses (read-input filename)))
+     (sum (map fuel-cost-part1 masses)))))
+
+(define day01-part2
+  (lambda (filename)
+    (let ((masses (read-input filename)))
+     (sum (map fuel-cost-part2 masses)))))
+
+(day01-part2 "input.txt")
