@@ -1,0 +1,98 @@
+(define (file->string file)
+  (define (helper file)
+    (let ((x (read-char file)))
+     (if (eof-object? x)
+         '()
+         (cons x (helper file)))))
+  (list->string (helper file)))
+
+(define (str-split str s)
+  (let ((len (string-length str))
+        (slen (string-length s)))
+    (letrec
+      ((split
+         (lambda (a b)
+           (cond
+             ((> (+ b slen) len) (if (= a b) '() (cons (substring str a len) '())))
+             ((= (+ b slen) len)
+              (if (and (= slen 1) (string=? (substring str a len) s))
+                  '()
+                  (cons (substring str a len) '())))
+             ((string=? s (substring str b (+ b slen)))
+              (if (= a b)
+                  (split (+ 1 a) (+ 1 b))
+                  (cons (substring str a b) (split (+ b slen) (+ b slen)))))
+             (else (split a (+ 1 b)))))))
+      (split 0 0))))
+
+(define (format-action str)
+  (let ((lst (string->list str)))
+   (cons (car lst) (string->number (list->string (cdr lst))))))
+
+(define N 270)
+(define E 0)
+(define S 90)
+(define W 180)
+
+(define (make-boat coord angle) (list coord angle))
+(define (boat-coord boat) (car boat))
+(define (boat-angle boat) (cadr boat))
+
+(define (man-distance rectangular)
+  (+ (abs (real-part rectangular)) (abs (imag-part rectangular))))
+
+(define (day12-part1 input)
+  (define (helper input boat)
+    (if (null? input)
+        (man-distance (boat-coord boat))
+        (helper (cdr input) (apply-action-pt1 (car input) boat))))
+  (helper input (make-boat (make-rectangular 0 0) 0)))
+
+(define (apply-action-pt1 action boat)
+  (let ((action (car action))
+        (amount (cdr action)))
+    (cond
+      ((char=? action #\R) (make-boat (boat-coord boat) (remainder (+ amount (boat-angle boat)) 360)))
+      ((char=? action #\L) (make-boat (boat-coord boat) (remainder (+ (* -1 amount) 360 (boat-angle boat)) 360)))
+      ((char=? action #\N) (make-boat (+ (make-rectangular 0 amount) (boat-coord boat)) (boat-angle boat))) 
+      ((char=? action #\S) (make-boat (+ (make-rectangular 0 (* -1 amount)) (boat-coord boat)) (boat-angle boat)))
+      ((char=? action #\W) (make-boat (+ (make-rectangular (* -1 amount) 0) (boat-coord boat)) (boat-angle boat)))
+      ((char=? action #\E) (make-boat (+ (make-rectangular amount 0) (boat-coord boat)) (boat-angle boat)))
+      ((char=? action #\F) (move-forward boat amount)))))
+
+(define (move-forward boat amount)
+  (let ((angle (boat-angle boat))) 
+    (cond
+      ((= N angle) (apply-action-pt1 (cons #\N amount) boat))
+      ((= W angle) (apply-action-pt1 (cons #\W amount) boat))
+      ((= S angle) (apply-action-pt1 (cons #\S amount) boat))
+      ((= E angle) (apply-action-pt1 (cons #\E amount) boat)))))
+(define (day12-part2 input)
+  (define (helper input boat waypoint)
+    (if (null? input)
+        (man-distance (boat-coord boat))
+        (let ((result (apply-action-pt2 (car input) boat waypoint)))
+         (helper (cdr input) (car result) (cdr result)))))
+  (helper input (make-boat (make-rectangular 0 0) 0) (make-rectangular 10 1)))
+
+(define (apply-action-pt2 action boat waypoint)
+  (let ((action (car action))
+        (amount (cdr action)))
+    (cond
+      ((char=? action #\R) (cons boat (rotate-waypoint waypoint amount))) 
+      ((char=? action #\L) (cons boat (rotate-waypoint waypoint (- 360 amount))))
+      ((char=? action #\N) (cons boat (+ waypoint (make-rectangular 0 amount))))
+      ((char=? action #\S) (cons boat (- waypoint (make-rectangular 0 amount))))
+      ((char=? action #\W) (cons boat (- waypoint (make-rectangular amount 0))))
+      ((char=? action #\E) (cons boat (+ waypoint (make-rectangular amount 0))))
+      ((char=? action #\F) (move-forward-pt2 boat waypoint amount)))))
+
+(define (move-forward-pt2 boat waypoint amount)
+  (cons (make-boat (+ (boat-coord boat) (* amount waypoint)) (boat-angle boat)) waypoint)) 
+
+(define (rotate-waypoint waypoint angle)
+  (* waypoint (expt 0+1i (/ angle -90))))
+
+(define input (map format-action (str-split (file->string (open-input-file "input.txt")) "\n")))
+(display "PART ONE: ")(display (day12-part1 input))(newline)
+(display "PART TWO: ")(display (day12-part2 input))(newline)
