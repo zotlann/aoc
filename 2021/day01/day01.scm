@@ -1,33 +1,4 @@
-(define (file->string file)
-  (define (helper file)
-    (let ((x (read-char file)))
-     (if (eof-object? x)
-         '()
-         (cons x (helper file)))))
-  (list->string (helper file)))
-
-(define (str-split str s)
-  (let ((len (string-length str))
-        (slen (string-length s)))
-    (letrec
-      ((split
-         (lambda (a b)
-           (cond
-             ((> (+ b slen) len) (if (= a b) '() (cons (substring str a len) '())))
-             ((= (+ b slen) len)
-              (if (and (= slen 1) (string=? (substring str a len) s))
-                  '()
-                  (cons (substring str a len) '())))
-             ((string=? s (substring str b (+ b slen)))
-              (if (= a b)
-                  (split (+ 1 a) (+ 1 b))
-                  (cons (substring str a b) (split (+ b slen) (+ b slen)))))
-             (else (split a (+ 1 b)))))))
-      (split 0 0))))
-
-
-(define input (str-split (file->string (open-input-file "input.txt")) "\n"))
-(define test-input (str-split (file->string (open-input-file "test-input.txt")) "\n"))
+(load "../../lib/lib.scm")
 
 (define (day01-part1 input)
   (cond
@@ -41,12 +12,15 @@
       (+ (is-bigger? input) (day01-part2 (cdr input)))))
 
 (define (is-bigger? input)
-  (let* ((a (car input))
-        (b (cadr input))
-        (c (caddr input))
-        (d (cadddr input))
+  (let* ((a (list-ref input 0))
+        (b (list-ref input 1))
+        (c (list-ref input 2))
+        (d (list-ref input 3))
         (n1 (+ a b c))
         (n2 (+ b c d)))
     (if (> n2 n1) 1 0)))
 
-(day01-part2 (map string->number input))
+(define file (open-input-file "input.txt"))
+(define file-str (file->string file))
+(define input (map string->number (str-split file-str "\n")))
+(day01-part2 input)
